@@ -288,7 +288,8 @@
     btnAutoPlace: document.getElementById("btnAutoPlace"),
     winToast: document.getElementById("winToast"),
     confetti: document.getElementById("confetti"),
-    toast: document.getElementById("toast")
+    toast: document.getElementById("toast"),
+    trayCue: document.getElementById("trayCue")
   };
 
   var solutionCache = null;
@@ -455,6 +456,35 @@
     els.btnUndo.disabled = state.history.length === 0;
   }
 
+  /* ================= 手机端：拼块提示 ================= */
+  var HINT_SEEN_KEY = "daily-puzzle:mobile-hint-seen";
+
+  function isMobileLayout() {
+    return window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
+  }
+
+  function cueSeen() {
+    try { return localStorage.getItem(HINT_SEEN_KEY) === "1"; } catch (err) { return false; }
+  }
+
+  function markCueSeen() {
+    try { localStorage.setItem(HINT_SEEN_KEY, "1"); } catch (err) {}
+  }
+
+  function updateTrayCue() {
+    if (!els.trayCue) return;
+    if (!isMobileLayout() || state.drag || cueSeen()) {
+      els.trayCue.hidden = true;
+      return;
+    }
+    var r = els.trayCard.getBoundingClientRect();
+    if (r.top < window.innerHeight - 150) {
+      els.trayCue.hidden = true;
+      return;
+    }
+    els.trayCue.hidden = false;
+  }
+
   /* ================= 拼块拖拽 ================= */
   var pending = null;
 
@@ -541,6 +571,8 @@
       else flipDrag();
     });
     toolbar.addEventListener("pointerdown", function (ev) { ev.stopPropagation(); });
+
+    if (els.trayCue) els.trayCue.hidden = true;
 
     state.drag = {
       id: id,
@@ -813,6 +845,7 @@
     if (d.chip) d.chip.classList.remove("dragging");
     els.tray.classList.remove("drop-hint");
     state.drag = null;
+    updateTrayCue();
   }
 
   function finishDrag(e) {
@@ -1302,6 +1335,35 @@
       els.winToast.classList.remove("show");
     });
 
+    els.trayCue.addEventListener("click", function () {
+      var card = els.trayCard;
+      var targetY = window.scrollY + card.getBoundingClientRect().top - 64;
+      var maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      targetY = Math.max(0, Math.min(maxY, targetY));
+      els.trayCue.hidden = true;
+      markCueSeen();
+      try {
+        window.scrollTo({ top: targetY, behavior: "smooth" });
+      } catch (err) {
+        window.scrollTo(0, targetY);
+      }
+      setTimeout(function () {
+        if (Math.abs(window.scrollY - targetY) > 4) window.scrollTo(0, targetY);
+      }, 500);
+    });
+
+    var cueTick = false;
+    window.addEventListener("scroll", function () {
+      if (cueTick) return;
+      cueTick = true;
+      requestAnimationFrame(function () {
+        cueTick = false;
+        if (window.scrollY > 30) markCueSeen();
+        updateTrayCue();
+      });
+    }, { passive: true });
+    window.addEventListener("resize", updateTrayCue);
+
     els.btnGuide.addEventListener("click", openGuide);
     els.btnHint.addEventListener("click", requestHint);
 
@@ -1401,6 +1463,17 @@
     restore();
     updateProgress();
     bind();
+    updateTrayCue();
+    setTimeout(updateTrayCue, 400);
+    setTimeout(function () {
+      if (els.trayCue && !cueSeen()) els.trayCue.hidden = true;
+    }, 12000);
+    if ("IntersectionObserver" in window && els.trayCard) {
+      var trayIO = new IntersectionObserver(function () { updateTrayCue(); }, {
+        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1]
+      });
+      trayIO.observe(els.trayCard);
+    }
 
     // 预热解算器（放到空闲时）
     var warm = function () { getSolution(function () {}); };
