@@ -282,6 +282,12 @@
     pieceTable: document.getElementById("pieceTable"),
     btnGuideHint: document.getElementById("btnGuideHint"),
     btnGuideSolution: document.getElementById("btnGuideSolution"),
+    btnHelp: document.getElementById("btnHelp"),
+    welcomeModal: document.getElementById("welcomeModal"),
+    btnWelcomeGuide: document.getElementById("btnWelcomeGuide"),
+    welcomeMonth: document.getElementById("welcomeMonth"),
+    welcomeDay: document.getElementById("welcomeDay"),
+    welcomeWeek: document.getElementById("welcomeWeek"),
     modal: document.getElementById("modal"),
     solBoard: document.getElementById("solBoard"),
     modalSub: document.getElementById("modalSub"),
@@ -1069,12 +1075,13 @@
 
   function openGuide() {
     els.guideModal.hidden = false;
-    document.body.style.overflow = "hidden";
+    syncBodyLock();
   }
 
   function closeGuide() {
     els.guideModal.hidden = true;
-    if (els.modal.hidden) document.body.style.overflow = "";
+    syncBodyLock();
+    updateTrayCue();
   }
 
   function clearHint() {
@@ -1155,9 +1162,39 @@
     }, 30);
   }
 
+  function syncBodyLock() {
+    var open = (els.modal && !els.modal.hidden) ||
+      (els.guideModal && !els.guideModal.hidden) ||
+      (els.welcomeModal && !els.welcomeModal.hidden);
+    document.body.style.overflow = open ? "hidden" : "";
+  }
+
+  function welcomeSeen() {
+    try { return localStorage.getItem("daily-puzzle:welcome-seen") === "1"; } catch (err) { return false; }
+  }
+
+  function markWelcomeSeen() {
+    try { localStorage.setItem("daily-puzzle:welcome-seen", "1"); } catch (err) {}
+  }
+
+  function openWelcome() {
+    if (!els.welcomeModal) return;
+    els.welcomeModal.hidden = false;
+    if (els.trayCue) els.trayCue.hidden = true;
+    syncBodyLock();
+  }
+
+  function closeWelcome() {
+    if (!els.welcomeModal) return;
+    els.welcomeModal.hidden = true;
+    markWelcomeSeen();
+    syncBodyLock();
+    updateTrayCue();
+  }
+
   function openModal(sol) {
     els.modal.hidden = false;
-    document.body.style.overflow = "hidden";
+    syncBodyLock();
     els.modalSub.textContent =
       view.m + "月" + view.d + "日 · " + WEEK_FULL[view.w] + (sol ? "" : " · 暂无解");
     var markup = boardMarkup(sol, { snap: false });
@@ -1170,7 +1207,7 @@
 
   function closeModal() {
     els.modal.hidden = true;
-    document.body.style.overflow = "";
+    syncBodyLock();
   }
 
   function autoPlaceSolution() {
@@ -1275,6 +1312,11 @@
     if (input) input.value = isoOf(view);
     var btnToday = document.getElementById("btnToday");
     if (btnToday) btnToday.disabled = isToday();
+    if (els.welcomeMonth) {
+      els.welcomeMonth.textContent = view.m + "月";
+      els.welcomeDay.textContent = view.d + "日";
+      els.welcomeWeek.textContent = weekShort;
+    }
     document.title = "每日拼图 · " + main + " " + week;
   }
 
@@ -1364,6 +1406,17 @@
     }, { passive: true });
     window.addEventListener("resize", updateTrayCue);
 
+    els.btnHelp.addEventListener("click", openWelcome);
+    els.welcomeModal.addEventListener("click", function (e) {
+      if (e.target.closest("[data-close-welcome]") || e.target.classList.contains("modal-backdrop")) {
+        closeWelcome();
+      }
+    });
+    els.btnWelcomeGuide.addEventListener("click", function () {
+      closeWelcome();
+      openGuide();
+    });
+
     els.btnGuide.addEventListener("click", openGuide);
     els.btnHint.addEventListener("click", requestHint);
 
@@ -1425,6 +1478,7 @@
     });
 
     document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !els.welcomeModal.hidden) { closeWelcome(); return; }
       if (e.key === "Escape" && !els.guideModal.hidden) closeGuide();
       if (e.key === "Escape" && !els.datePop.hidden) closeDatePop();
       if (e.key === "Escape" && !els.modal.hidden) closeModal();
@@ -1468,6 +1522,13 @@
     setTimeout(function () {
       if (els.trayCue && !cueSeen()) els.trayCue.hidden = true;
     }, 12000);
+    setTimeout(function () {
+      if (!welcomeSeen()) {
+        if (state.placed.size === 0) openWelcome();
+        else markWelcomeSeen();
+      }
+    }, 650);
+
     if ("IntersectionObserver" in window && els.trayCard) {
       var trayIO = new IntersectionObserver(function () { updateTrayCue(); }, {
         threshold: [0, 0.1, 0.25, 0.5, 0.75, 1]

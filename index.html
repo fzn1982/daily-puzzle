@@ -65,7 +65,7 @@
         </svg>
       </span>
       <div class="brand-text">
-        <h1>每日拼图</h1>
+        <h1>每日拼图 <button type="button" class="help-btn" id="btnHelp" aria-label="怎么玩" title="怎么玩">?</button></h1>
         <p>月 · 日 · 星期，一天一题</p>
       </div>
     </div>
@@ -185,6 +185,47 @@
   </div>
 </div>
 
+
+<div class="modal" id="welcomeModal" hidden>
+  <div class="modal-backdrop" data-close-welcome></div>
+  <div class="modal-card welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <button type="button" class="icon-btn welcome-close" data-close-welcome aria-label="关闭">✕</button>
+    <span class="welcome-kicker">每天一题</span>
+    <h3 id="welcomeTitle">把棋盘铺满，只留三个格子</h3>
+    <p class="welcome-sub">
+      用托盘里的 10 块拼块盖住棋盘，最后只空出今天的
+      <b>月 · 日 · 星期</b> 三格，就算拼好啦。
+    </p>
+
+    <div class="welcome-goal">
+      <span class="welcome-goal-label">今天留空</span>
+      <span class="wgoal" id="welcomeMonth">—</span>
+      <span class="wgoal" id="welcomeDay">—</span>
+      <span class="wgoal" id="welcomeWeek">—</span>
+    </div>
+
+    <ol class="welcome-steps">
+      <li>
+        <span class="wstep-n">1</span>
+        <div><b>看金色三格</b><span>棋盘上高亮的三格，就是今天要空着的位置。</span></div>
+      </li>
+      <li>
+        <span class="wstep-n">2</span>
+        <div><b>把拼块拖进棋盘</b><span>靠近正确位置会自动吸附；手机端拼块在下面的托盘里，往下滑就能看到。</span></div>
+      </li>
+      <li>
+        <span class="wstep-n">3</span>
+        <div><b>10 块放完就赢</b><span>点按旋转，右键 / 长按翻转；卡住了点「提示」或「思路」。</span></div>
+      </li>
+    </ol>
+
+    <div class="welcome-actions">
+      <button type="button" class="btn ghost" id="btnWelcomeGuide">看解题思路</button>
+      <button type="button" class="btn primary" data-close-welcome>开始拼</button>
+    </div>
+    <p class="welcome-foot">以后想再看，点标题旁边的 <b>?</b></p>
+  </div>
+</div>
 
 <div class="modal" id="guideModal" hidden>
   <div class="modal-backdrop" data-close-guide></div>
