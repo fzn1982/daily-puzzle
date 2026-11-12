@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f1e9db" />
+<meta name="description" content="每日拼图：用 10 块拼块盖住棋盘，只留下今天的月、日、星期。拖拽磁吸、参考答案、支持任意日期和手机。" />
+<title>每日拼图 · 月 · 日 · 星期</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect x='1' y='1' width='42' height='42' rx='13' fill='%232f2a24'/%3E%3Crect x='8' y='8' width='13' height='13' rx='3' fill='%23fff6e6'/%3E%3Crect x='23' y='8' width='13' height='13' rx='3' fill='%23f0b75c'/%3E%3Crect x='8' y='23' width='13' height='13' rx='3' fill='%23fff6e6'/%3E%3Crect x='23' y='23' width='13' height='13' rx='3' fill='%23fff6e6' opacity='.55'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- 全局 SVG 资源 -->
+<svg class="svg-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="slabGrad" x1="0" y1="0" x2="0.22" y2="1">
+      <stop offset="0" stop-color="#fffdf9" />
+      <stop offset="0.5" stop-color="#fbf6ec" />
+      <stop offset="1" stop-color="#f1e8d8" />
+    </linearGradient>
+    <linearGradient id="trayGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfc3aa" />
+      <stop offset="0.22" stop-color="#ddd2bc" />
+      <stop offset="1" stop-color="#ece2cf" />
+    </linearGradient>
+    <linearGradient id="trayShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5c4626" stop-opacity="0.22" />
+      <stop offset="0.06" stop-color="#5c4626" stop-opacity="0.06" />
+      <stop offset="0.2" stop-color="#5c4626" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="tileGrad" x1="0" y1="0" x2="0.1" y2="1">
+      <stop offset="0" stop-color="#fffdf9" />
+      <stop offset="1" stop-color="#f8f1e4" />
+    </linearGradient>
+    <linearGradient id="tileTarget" x1="0" y1="0" x2="0.1" y2="1">
+      <stop offset="0" stop-color="#fdf2dc" />
+      <stop offset="1" stop-color="#f8e3bb" />
+    </linearGradient>
+    <linearGradient id="plaqueGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf8" />
+      <stop offset="1" stop-color="#f3ecde" />
+    </linearGradient>
+    <linearGradient id="pieceGrad" x1="0.1" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#fffefb" />
+      <stop offset="0.42" stop-color="#fbf5e8" />
+      <stop offset="1" stop-color="#f1e6cf" />
+    </linearGradient>
+    <filter id="plaqueShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="0.05" stdDeviation="0.055" flood-color="#4a3a24" flood-opacity="0.3" />
+    </filter>
+  </defs>
+</svg>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 44 44">
+          <rect x="1" y="1" width="42" height="42" rx="13" fill="#2f2a24" />
+          <rect x="8" y="8" width="13" height="13" rx="3.5" fill="#fff6e6" />
+          <rect x="23" y="8" width="13" height="13" rx="3.5" fill="#f0b75c" />
+          <rect x="8" y="23" width="13" height="13" rx="3.5" fill="#fff6e6" />
+          <rect x="23" y="23" width="13" height="13" rx="3.5" fill="#fff6e6" opacity="0.5" />
+        </svg>
+      </span>
+      <div class="brand-text">
+        <h1>每日拼图</h1>
+        <p>月 · 日 · 星期，一天一题</p>
+      </div>
+    </div>
+
+    <div class="date-wrap">
+      <button type="button" class="date-card" id="dateCard" aria-haspopup="dialog" aria-expanded="false" aria-controls="datePop" title="换一个日期">
+        <span class="date-dot" aria-hidden="true"></span>
+        <span class="date-text">
+          <span class="date-main" id="dateMain">—</span>
+          <span class="date-sub" id="dateSub">—</span>
+        </span>
+        <span class="date-caret" aria-hidden="true">
+          <svg viewBox="0 0 10 6" width="10" height="6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      <div class="date-pop" id="datePop" role="dialog" aria-label="选择日期" hidden>
+        <div class="date-pop-row">
+          <button type="button" class="btn small" id="btnPrevDay" aria-label="前一天">‹</button>
+          <input type="date" id="dateInput" min="1900-01-01" max="2100-12-31" aria-label="选择日期" />
+          <button type="button" class="btn small" id="btnNextDay" aria-label="后一天">›</button>
+        </div>
+        <div class="date-pop-row">
+          <button type="button" class="btn small" id="btnToday">回到今天</button>
+          <button type="button" class="btn small ghost" id="btnRandom">随机一天</button>
+        </div>
+        <p class="date-pop-tip">挑任意日期，星期会自动换算；每天的进度分别保存。</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="board-col">
+      <div class="board-inner">
+        <div class="goals" aria-label="今日需要留空的格子">
+          <span class="goals-label" id="goalsLabel">今日留空</span>
+          <span class="goal" id="goalMonth">—</span>
+          <span class="goal" id="goalDay">—</span>
+          <span class="goal" id="goalWeek">—</span>
+        </div>
+
+        <div class="board-wrap">
+          <svg id="boardSvg" class="board-svg" role="img" aria-label="每日拼图棋盘"></svg>
+          <div class="piece-layer" id="pieceLayer"></div>
+        </div>
+
+        <div class="board-bar">
+          <div class="progress">
+            <span class="progress-num"><b id="placedNum">0</b>/10</span>
+            <span class="progress-label">已放置</span>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn ghost" id="btnGuide">思路</button>
+            <button type="button" class="btn ghost" id="btnHint">提示</button>
+            <button type="button" class="btn ghost" id="btnUndo" disabled>撤销</button>
+            <button type="button" class="btn ghost" id="btnReset">重来</button>
+            <button type="button" class="btn primary" id="btnSolution">参考答案</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="tray-col">
+      <div class="tray-card">
+        <div class="tray-head">
+          <h2>拼块</h2>
+          <span class="tray-hint">拖进棋盘</span>
+        </div>
+        <div class="tray" id="tray"></div>
+        <div class="tray-foot">
+          <span>点按旋转</span>
+          <span>右键 / 长按翻转</span>
+          <span>拖到托盘可放回</span>
+        </div>
+      </div>
+      <p class="goal-note">让 <b id="goalNoteTargets">—</b> 三个格子空着</p>
+    </aside>
+  </main>
+</div>
+
+<div class="drag-layer" id="dragLayer" aria-hidden="true"></div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="win-toast" id="winToast" aria-hidden="true">
+  <div class="win-emoji" aria-hidden="true">🎉</div>
+  <div class="win-text">
+    <b>拼好了，坚持就是胜利</b>
+    <span>月 · 日 · 星期 都亮出来了</span>
+  </div>
+  <button type="button" class="btn small" id="btnAgain">再来一次</button>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalTitle">参考解法</h3>
+        <p id="modalSub">—</p>
+      </div>
+      <button type="button" class="icon-btn" data-close aria-label="关闭">✕</button>
+    </div>
+    <div class="sol-board" id="solBoard"></div>
+    <p class="modal-note">
+      留空的三个格子正是今天的 月 / 日 / 星期。点击「一键摆放」看拼块各就各位，再点「重来」可以继续挑战。
+    </p>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" data-close>关闭</button>
+      <button type="button" class="btn primary" id="btnAutoPlace">一键摆放</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal" id="guideModal" hidden>
+  <div class="modal-backdrop" data-close-guide></div>
+  <div class="modal-card guide-card" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <div class="modal-head">
+      <div>
+        <h3 id="guideTitle">解题思路</h3>
+        <p>五个步骤 · 先放最挑位置的块</p>
+      </div>
+      <button type="button" class="icon-btn" data-close-guide aria-label="关闭">✕</button>
+    </div>
+
+    <div class="guide-body">
+      <ol class="guide-steps">
+        <li><b>圈空位</b><span>金色三格是墙，其余 47 格要正好填满。</span></li>
+        <li><b>找窄条</b><span>最后一行只剩 2–3 格；29/30/31 一带常出现 1×4。只能用带长直边的块（E、C）。</span></li>
+        <li><b>定四角</b><span>左上、右上、左下、右下，角落能放的朝向最少。</span></li>
+        <li><b>先放难块</b><span>E 长条最挑位置，D / I 最灵活；按下面的顺序放。</span></li>
+        <li><b>卡住退一步</b><span>撤销最后 1–2 块换个位置，不要整盘重来。</span></li>
+      </ol>
+
+      <h4 class="guide-h4">十块拼块的难易（平均可放位置，越少越挑位置）</h4>
+      <div class="piece-table" id="pieceTable"></div>
+      <p class="guide-note">按 2555 种「月 / 日 / 星期」组合统计；「可放位置」= 该块当天所有合法摆法数量。</p>
+
+      <div class="guide-tips">
+        <b>卡住时：</b>① 撤销一步换位置　② 拖动时看虚线预览　③ 参考答案只看一块
+      </div>
+    </div>
+
+    <div class="modal-actions guide-actions">
+      <button type="button" class="btn ghost" id="btnGuideSolution">看本局解法</button>
+      <button type="button" class="btn ghost" data-close-guide>开始练习</button>
+      <button type="button" class="btn primary" id="btnGuideHint">给我一块提示</button>
+    </div>
+  </div>
+</div>
+
+<script src="solver.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
