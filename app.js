@@ -362,20 +362,49 @@
   }
 
   /* ================= 托盘 ================= */
+  var SLOT_DIMS = {};
+  PIECE_ORDER.forEach(function (id) {
+    var maxW = 1, maxH = 1;
+    for (var f = 0; f < 2; f++) {
+      for (var r = 0; r < 4; r++) {
+        var b = bounds(orient(PIECES[id], r, f));
+        if (b.w > maxW) maxW = b.w;
+        if (b.h > maxH) maxH = b.h;
+      }
+    }
+    SLOT_DIMS[id] = { w: maxW, h: maxH };
+  });
+
+  // 大托盘位（4×4）排前面，剩下 3×3，行更整齐；位置一旦确定就不再变
+  var TRAY_ORDER = PIECE_ORDER.slice().sort(function (a, b) {
+    var da = SLOT_DIMS[a], db = SLOT_DIMS[b];
+    var diff = db.w * db.h - da.w * da.h;
+    if (diff !== 0) return diff;
+    return PIECE_ORDER.indexOf(a) - PIECE_ORDER.indexOf(b);
+  });
+
   function renderTray() {
     var html = "";
-    PIECE_ORDER.forEach(function (id) {
+    TRAY_ORDER.forEach(function (id) {
       var o = orientations[id];
       var d = pieceData(id, o.rot, o.flip);
-      var w = ((d.w + 2 * PAD)).toFixed(3);
-      var h = ((d.h + 2 * PAD)).toFixed(3);
+      var slot = SLOT_DIMS[id];
+      var slotW = slot.w + 2 * PAD;
+      var slotH = slot.h + 2 * PAD;
+      var chipW = d.w + 2 * PAD;
+      var chipH = d.h + 2 * PAD;
+      var offX = (slotW - chipW) / 2;
+      var offY = (slotH - chipH) / 2;
       var used = state.used.has(id);
       html +=
         '<div class="chip-slot' + (used ? " is-used" : "") + '" data-piece="' + id + '" ' +
-        'style="width:calc(var(--chip) * ' + w + ');height:calc(var(--chip) * ' + h + ')">' +
+        'data-slot-w="' + slotW.toFixed(3) + '" data-slot-h="' + slotH.toFixed(3) + '" ' +
+        'style="width:calc(var(--chip) * ' + slotW.toFixed(3) + ');height:calc(var(--chip) * ' + slotH.toFixed(3) + ')">' +
         '<button type="button" class="chip' + (used ? " used" : "") + '" data-piece="' + id + '" ' +
+        'style="width:calc(var(--chip) * ' + chipW.toFixed(3) + ');height:calc(var(--chip) * ' + chipH.toFixed(3) + ')" ' +
         'aria-label="拼块 ' + id + '">' + pieceMarkup(d, COLORS[id]) + "</button>" +
         '<button type="button" class="chip-flip" data-flip="' + id + '" ' +
+        'style="top:calc(var(--chip) * ' + (offY - 0.45).toFixed(3) + ');right:calc(var(--chip) * ' + (offX - 0.45).toFixed(3) + ')" ' +
         'title="翻转（右键 / 长按也可以）" aria-label="翻转拼块 ' + id + '">⇄</button>' +
         "</div>";
     });
